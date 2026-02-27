@@ -6,6 +6,7 @@ import 'package:musuem_image_saver/features/landmark/model/gallery_item_model.da
 
 import 'package:musuem_image_saver/features/landmark/viewmodel/landmark_detail_cubit/landmark_detail_cubit.dart';
 import 'package:musuem_image_saver/features/landmark/viewmodel/landmark_detail_cubit/landmark_detail_state.dart';
+import 'package:musuem_image_saver/features/local_gallery/viewmodel/local_gallery_cubit/local_gallery_cubit.dart';
 
 // Form screen for adding a new gallery item to a landmark.
 class AddGalleryItemScreen extends StatefulWidget {
@@ -60,9 +61,24 @@ class _AddGalleryItemScreenState extends State<AddGalleryItemScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
 
-    await context.read<LandmarkDetailCubit>().addGalleryItem(
+    // Resolve project + landmark display names from the cubit state
+    final detailState = context.read<LandmarkDetailCubit>().state;
+    String landmarkName = '';
+    String projectName = '';
+    if (detailState is LandmarkDetailLoaded) {
+      landmarkName = detailState.landmark.name;
+      projectName = detailState.landmark.project?.name ?? '';
+    } else if (detailState is GalleryActionLoading) {
+      landmarkName = detailState.landmark.name;
+      projectName = detailState.landmark.project?.name ?? '';
+    }
+
+    // Save locally — upload happens later from Local Drafts screen
+    await context.read<LocalGalleryCubit>().saveDraft(
       projectId: widget.projectId,
       landmarkId: widget.landmarkId,
+      projectName: projectName,
+      landmarkName: landmarkName,
       name: _nameCtrl.text.trim(),
       partType: _partType,
       signatureType: _signatureType.toLowerCase(),
@@ -73,119 +89,106 @@ class _AddGalleryItemScreenState extends State<AddGalleryItemScreen> {
       images: _images,
     );
 
-    if (mounted) Navigator.of(context).pop();
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Saved locally. Upload from Local Drafts.'),
+        ),
+      );
+      Navigator.of(context).pop();
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Scaffold(
+      appBar: AppBar(title: const Text('Add Gallery Item')),
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
+          children: [
+            // Name
+            _field(label: 'Name', controller: _nameCtrl, required: true),
+            const SizedBox(height: 16),
 
-    return BlocListener<LandmarkDetailCubit, LandmarkDetailState>(
-      listener: (context, state) {
-        if (state is GalleryActionSuccess) {
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.message)));
-          Navigator.of(context).pop();
-        } else if (state is GalleryActionError) {
-          setState(() => _submitting = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: theme.colorScheme.error,
+            // Part Type
+            _dropdown(
+              label: 'Part Type',
+              value: _partType,
+              items: _partTypes,
+              onChanged: (v) => setState(() => _partType = v!),
             ),
-          );
-        }
-      },
-      child: Scaffold(
-        appBar: AppBar(title: const Text('Add Gallery Item')),
-        body: Form(
-          key: _formKey,
-          child: ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              // Name
-              _field(label: 'Name', controller: _nameCtrl, required: true),
-              const SizedBox(height: 16),
+            const SizedBox(height: 16),
 
-              // Part Type
-              _dropdown(
-                label: 'Part Type',
-                value: _partType,
-                items: _partTypes,
-                onChanged: (v) => setState(() => _partType = v!),
-              ),
-              const SizedBox(height: 16),
+            // Signature Type
+            _dropdown(
+              label: 'Signature Type',
+              value: _signatureType,
+              items: _sigTypes,
+              onChanged: (v) => setState(() => _signatureType = v!),
+            ),
+            const SizedBox(height: 16),
 
-              // Signature Type
-              _dropdown(
-                label: 'Signature Type',
-                value: _signatureType,
-                items: _sigTypes,
-                onChanged: (v) => setState(() => _signatureType = v!),
-              ),
-              const SizedBox(height: 16),
-
-              // Width / Height
-              Row(
-                children: [
-                  Expanded(
-                    child: _field(
-                      label: 'Width (cm)',
-                      controller: _widthCtrl,
-                      numeric: true,
-                    ),
+            // Width / Height
+            Row(
+              children: [
+                Expanded(
+                  child: _field(
+                    label: 'Width (cm)',
+                    controller: _widthCtrl,
+                    numeric: true,
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: _field(
-                      label: 'Height (cm)',
-                      controller: _heightCtrl,
-                      numeric: true,
-                    ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: _field(
+                    label: 'Height (cm)',
+                    controller: _heightCtrl,
+                    numeric: true,
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
 
-              // Description
-              _field(
-                label: 'Description',
-                controller: _descCtrl,
-                maxLines: 3,
-                required: true,
-              ),
-              const SizedBox(height: 16),
+            // Description
+            _field(
+              label: 'Description',
+              controller: _descCtrl,
+              maxLines: 3,
+              required: true,
+            ),
+            const SizedBox(height: 16),
 
-              // Notes
-              _field(label: 'Notes', controller: _notesCtrl, maxLines: 2),
-              const SizedBox(height: 24),
+            // Notes
+            _field(label: 'Notes', controller: _notesCtrl, maxLines: 2),
+            const SizedBox(height: 24),
 
-              // Image picker
-              _ImagePickerSection(
-                images: _images,
-                onAdd: (img) => setState(() => _images.add(img)),
-                onRemove: (i) => setState(() => _images.removeAt(i)),
-              ),
-              const SizedBox(height: 32),
+            // Image picker
+            _ImagePickerSection(
+              images: _images,
+              onAdd: (img) => setState(() => _images.add(img)),
+              onRemove: (i) => setState(() => _images.removeAt(i)),
+            ),
+            const SizedBox(height: 32),
 
-              // Submit button
-              FilledButton.icon(
-                onPressed: _submitting ? null : _submit,
-                icon: _submitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Icon(Icons.check_rounded),
-                label: Text(_submitting ? 'Saving…' : 'Add to Gallery'),
-              ),
-            ],
-          ),
+            // Submit button
+            FilledButton.icon(
+              onPressed: _submitting ? null : _submit,
+              icon: _submitting
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_submitting ? 'Saving…' : 'Save Locally'),
+            ),
+          ],
         ),
       ),
     );

@@ -51,4 +51,8 @@ class ApiEndpoints {
       '/api/projects/$projectId/landmarks/$landmarkId/files';
   static String landmarkFilesDownload(int projectId, int landmarkId) =>
       '/api/projects/$projectId/landmarks/$landmarkId/files/download';
+
+  // Signature
+  static const String signatureDetector = '/api/signature-detector';
+  static const String signatureConfiguration = '/api/signature-configuration';
 }

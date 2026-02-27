@@ -11,6 +11,8 @@ import '../../features/project/model/project_model.dart';
 import '../../features/project/view/screens/projects_screen.dart';
 import '../../features/project/view/screens/project_detail_screen.dart';
 import '../../features/landmark/view/screens/landmark_detail_screen.dart';
+import '../../features/signature/view/screens/signature_screen.dart';
+import '../../features/local_gallery/view/screens/local_gallery_screen.dart';
 
 class AppRouter {
   static GoRouter createRouter(AuthCubit authCubit) {
@@ -36,6 +38,10 @@ class AppRouter {
         // ── Auth ───────────────────────────────────────────────────────────
         GoRoute(path: '/login', builder: (_, __) => const LoginScreen()),
         GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+        GoRoute(
+          path: '/local-gallery',
+          builder: (_, __) => const LocalGalleryScreen(),
+        ),
 
         // ── Projects ────────────────────────────────────────────────────────
         GoRoute(
@@ -58,6 +64,18 @@ class AppRouter {
                       state.pathParameters['landmarkId']!,
                     );
                     return LandmarkDetailScreen(
+                      projectId: projectId,
+                      landmarkId: landmarkId,
+                    );
+                  },
+                ),
+                GoRoute(
+                  path: 'signature',
+                  builder: (context, state) {
+                    final projectId = int.parse(state.pathParameters['id']!);
+                    // Optional landmarkId passed via extra (int?)
+                    final landmarkId = state.extra as int?;
+                    return SignatureScreen(
                       projectId: projectId,
                       landmarkId: landmarkId,
                     );

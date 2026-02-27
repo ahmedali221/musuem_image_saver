@@ -3,6 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:get_it/get_it.dart';
 
 import '../network/dio_client.dart';
+import '../database/database_helper.dart';
 import '../../features/auth/viewmodel/auth_repository.dart';
 import '../../features/auth/viewmodel/auth_cubit/auth_cubit.dart';
 import '../../features/project/viewmodel/project_repository.dart';
@@ -10,6 +11,11 @@ import '../../features/project/viewmodel/project_cubit/project_cubit.dart';
 import '../../features/landmark/viewmodel/landmark_repository.dart';
 import '../../features/landmark/viewmodel/landmark_cubit/landmark_cubit.dart';
 import '../../features/landmark/viewmodel/landmark_detail_cubit/landmark_detail_cubit.dart';
+import '../../features/signature/viewmodel/signature_repository.dart';
+import '../../features/signature/viewmodel/signature_cubit/signature_cubit.dart';
+import '../../features/signature/viewmodel/signature_config_cubit/signature_config_cubit.dart';
+import '../../features/local_gallery/viewmodel/local_gallery_repository.dart';
+import '../../features/local_gallery/viewmodel/local_gallery_cubit/local_gallery_cubit.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -45,5 +51,28 @@ Future<void> setupServiceLocator() async {
   // LandmarkDetailCubit: always fresh so each detail screen starts clean
   sl.registerFactory<LandmarkDetailCubit>(
     () => LandmarkDetailCubit(sl<LandmarkRepository>()),
+  );
+
+  // ── Signature ─────────────────────────────────────────────────────────────
+  sl.registerSingleton<SignatureRepository>(SignatureRepository(sl<Dio>()));
+
+  sl.registerFactory<SignatureCubit>(
+    () => SignatureCubit(sl<SignatureRepository>()),
+  );
+
+  sl.registerFactory<SignatureConfigCubit>(
+    () => SignatureConfigCubit(sl<SignatureRepository>()),
+  );
+
+  // ── Local Gallery ───────────────────────────────────────────────────────────
+  sl.registerSingleton<LocalGalleryRepository>(
+    LocalGalleryRepository(DatabaseHelper.instance),
+  );
+
+  sl.registerFactory<LocalGalleryCubit>(
+    () => LocalGalleryCubit(
+      sl<LocalGalleryRepository>(),
+      sl<LandmarkRepository>(),
+    ),
   );
 }

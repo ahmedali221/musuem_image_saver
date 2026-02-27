@@ -29,6 +29,13 @@ class ProjectsScreen extends StatelessWidget {
             tooltip: 'Menu',
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.inbox_outlined),
+            tooltip: 'Local Drafts',
+            onPressed: () => context.push('/local-gallery'),
+          ),
+        ],
       ),
       body: BlocBuilder<ProjectCubit, ProjectState>(
         builder: (context, state) {

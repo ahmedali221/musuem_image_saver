@@ -185,7 +185,7 @@ class _ProjectDetailBody extends StatelessWidget {
           ),
         ),
       ),
-      // Action to add landmark wouldn't be here since API doesn't mention landmark creation yet, just listing.
+      floatingActionButton: _SignatureDetectFab(projectId: project.id),
     );
   }
 
@@ -235,6 +235,22 @@ class _ProjectDetailBody extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+// ── Separate widget: Signature FAB ────────────────────────────────────────────
+
+class _SignatureDetectFab extends StatelessWidget {
+  final int projectId;
+
+  const _SignatureDetectFab({required this.projectId});
+
+  @override
+  Widget build(BuildContext context) {
+    return FloatingActionButton(
+      onPressed: () => context.push('/projects/$projectId/signature'),
+      child: const Icon(Icons.document_scanner_outlined),
     );
   }
 }

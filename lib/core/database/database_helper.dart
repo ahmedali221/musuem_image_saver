@@ -19,7 +19,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _onCreate,
       onUpgrade: _onUpgrade,
       onOpen: (db) async {
@@ -29,9 +29,9 @@ class DatabaseHelper {
   }
 
   Future<void> _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    await db.execute('DROP TABLE IF EXISTS profiles');
-    await db.execute('DROP TABLE IF EXISTS projects');
-    await _onCreate(db, newVersion);
+    if (oldVersion < 3) {
+      await _createLocalGalleryDrafts(db);
+    }
   }
 
   Future<void> _onCreate(Database db, int version) async {
@@ -58,6 +58,29 @@ class DatabaseHelper {
         imagePaths TEXT NOT NULL,
         createdAt TEXT NOT NULL,
         FOREIGN KEY (projectId) REFERENCES projects (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await _createLocalGalleryDrafts(db);
+  }
+
+  Future<void> _createLocalGalleryDrafts(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS local_gallery_drafts (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        project_id  INTEGER NOT NULL,
+        landmark_id INTEGER NOT NULL,
+        project_name  TEXT NOT NULL DEFAULT '',
+        landmark_name TEXT NOT NULL DEFAULT '',
+        name          TEXT NOT NULL,
+        part_type     TEXT NOT NULL,
+        signature_type TEXT NOT NULL,
+        width         REAL,
+        height        REAL,
+        description   TEXT NOT NULL DEFAULT '',
+        notes         TEXT NOT NULL DEFAULT '',
+        image_paths   TEXT NOT NULL DEFAULT '',
+        created_at    TEXT NOT NULL
       )
     ''');
   }

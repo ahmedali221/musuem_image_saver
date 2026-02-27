@@ -79,8 +79,18 @@ class AppDrawer extends StatelessWidget {
             label: 'Projects',
             selected: currentPath.startsWith('/projects'),
             onTap: () {
-              Navigator.of(context).pop(); // close drawer first
+              Navigator.of(context).pop();
               context.go('/projects');
+            },
+          ),
+
+          AppDrawerItem(
+            icon: Icons.inbox_outlined,
+            label: 'Local Drafts',
+            selected: currentPath.startsWith('/local-gallery'),
+            onTap: () {
+              Navigator.of(context).pop();
+              context.push('/local-gallery');
             },
           ),
 

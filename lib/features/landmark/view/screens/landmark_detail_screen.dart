@@ -9,6 +9,9 @@ import 'package:musuem_image_saver/features/landmark/model/gallery_item_model.da
 import 'package:musuem_image_saver/features/landmark/viewmodel/landmark_detail_cubit/landmark_detail_cubit.dart';
 import 'package:musuem_image_saver/features/landmark/viewmodel/landmark_detail_cubit/landmark_detail_state.dart';
 import 'package:musuem_image_saver/features/landmark/view/widgets/gallery_item_card.dart';
+import 'package:musuem_image_saver/features/signature/viewmodel/signature_config_cubit/signature_config_cubit.dart';
+import 'package:musuem_image_saver/features/signature/view/widgets/signature_actions_bar.dart';
+import 'package:musuem_image_saver/features/local_gallery/viewmodel/local_gallery_cubit/local_gallery_cubit.dart';
 import 'gallery_item_form_screens.dart';
 
 // Landmark Detail Screen — shows info + gallery & files
@@ -24,9 +27,15 @@ class LandmarkDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (_) =>
-          sl<LandmarkDetailCubit>()..loadLandmark(projectId, landmarkId),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(
+          create: (_) =>
+              sl<LandmarkDetailCubit>()..loadLandmark(projectId, landmarkId),
+        ),
+        BlocProvider(create: (_) => sl<SignatureConfigCubit>()),
+        BlocProvider(create: (_) => sl<LocalGalleryCubit>()),
+      ],
       child: _LandmarkDetailBody(projectId: projectId, landmarkId: landmarkId),
     );
   }
@@ -171,8 +180,15 @@ class _LandmarkTabView extends StatelessWidget {
               ? null
               : () => Navigator.of(context).push(
                   MaterialPageRoute(
-                    builder: (_) => BlocProvider.value(
-                      value: context.read<LandmarkDetailCubit>(),
+                    builder: (_) => MultiBlocProvider(
+                      providers: [
+                        BlocProvider.value(
+                          value: context.read<LandmarkDetailCubit>(),
+                        ),
+                        BlocProvider.value(
+                          value: context.read<LocalGalleryCubit>(),
+                        ),
+                      ],
                       child: AddGalleryItemScreen(
                         projectId: projectId,
                         landmarkId: landmarkId,
@@ -191,6 +207,11 @@ class _LandmarkTabView extends StatelessWidget {
                   ),
                 )
               : const Icon(Icons.add),
+        ),
+
+        bottomNavigationBar: SignatureActionsBar(
+          landmarkId: landmarkId,
+          projectId: projectId,
         ),
 
         body: NestedScrollView(
